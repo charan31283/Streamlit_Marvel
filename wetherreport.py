@@ -1,6 +1,6 @@
 import requests as r
 import streamlit as st
-from google import genai
+import google.genai as genai
 
 st.set_page_config(page_title="Weather & Safety Assistant")
 
@@ -41,3 +41,4 @@ if st.button("Get Weather & Advice"):
                 st.write(ai_response.text)
 
         
+
