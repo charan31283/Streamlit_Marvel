@@ -9,8 +9,8 @@ st.set_page_config(page_title="Weather & Safety Assistant")
 st.title("☁️ Weather & Safety Assistant")
 st.write("Enter your **Latitude** and **Longitude** to get live weather info and precautions!")
 
-lat = st.number_input("Enter Latitude:", format="%.6f")
-lon = st.number_input("Enter Longitude:", format="%.6f")
+lat = st.number_input("Enter Latitude: ")
+lon = st.number_input("Enter Longitude: ")
 
 weather_api_key = "8f1b2bb4e9921443522d43cc36a8a719"
 gemini_api_key = "AIzaSyD2k4du2yV_ce2X2_xf8ohXCHPp68S9UD0"
@@ -43,4 +43,5 @@ if st.button("Get Weather & Advice"):
                 st.write(ai_response.text)
 
         
+
 
