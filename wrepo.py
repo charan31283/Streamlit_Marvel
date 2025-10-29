@@ -114,3 +114,4 @@ if st.button("Get Weather & Precautions"):
 
                 st.subheader("🌤️ Precautionary Advice:")
                 st.write(ai_response.text)
+
