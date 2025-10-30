@@ -2,8 +2,8 @@ import requests
 import streamlit as st
 import google.genai as genai
 
-WEATHER_API_KEY = "8f1b2bb4e9921443522d43cc36a8a719"  
-GEMINI_API_KEY = "AIzaSyD2k4du2yV_ce2X2_xf8ohXCHPp68S9UD0"  
+WEATHER_API_KEY = "8f1b2bb4e9921443522d43cc36a8a719"
+GEMINI_API_KEY = "AIzaSyD2k4du2yV_ce2X2_xf8ohXCHPp68S9UD0"
 
 st.set_page_config(page_title="🌦️ Weather & Safety Assistant", page_icon="☁️")
 st.title("🌦️ Weather & Safety Assistant")
@@ -11,77 +11,17 @@ st.title("🌦️ Weather & Safety Assistant")
 st.write("This app shows your **current location's weather** automatically 🌍 and lets you check other cities too!")
 
 def get_current_location():
-        # 1) Try getting precise browser geolocation (works after deployment and locally)
-        lat = None
-        lon = None
-        city_name = None
-
-        try:
-            # Prefer streamlit-js-eval if available
-            try:
-                from streamlit_js_eval import get_geolocation  # type: ignore
-            except Exception:
-                get_geolocation = None  # type: ignore
-
-            if get_geolocation is not None:
-                with st.spinner("Requesting your location from the browser..."):
-                    loc = get_geolocation(timeout=15)
-
-                if isinstance(loc, dict):
-                    # Handle both possible shapes
-                    if "coords" in loc and isinstance(loc.get("coords"), dict):
-                        coords = loc["coords"]
-                        lat = coords.get("latitude")
-                        lon = coords.get("longitude")
-                    else:
-                        lat = loc.get("latitude")
-                        lon = loc.get("longitude")
-
-            # Alternative component (if installed) as a fallback path
-            if (lat is None or lon is None):
-                try:
-                    from streamlit_geolocation import geolocation  # type: ignore
-                    with st.spinner("Requesting your location from the browser..."):
-                        gloc = geolocation()
-                    if isinstance(gloc, dict):
-                        lat = gloc.get("latitude")
-                        lon = gloc.get("longitude")
-                except Exception:
-                    pass
-
-            # If we got coordinates from the browser, reverse-geocode city name
-            if lat is not None and lon is not None:
-                try:
-                    url = (
-                        f"http://api.openweathermap.org/geo/1.0/reverse?lat={lat}&lon={lon}&limit=1&appid={WEATHER_API_KEY}"
-                    )
-                    r = requests.get(url, timeout=10)
-                    if r.status_code == 200:
-                        j = r.json()
-                        if j:
-                            city_name = j[0].get("name") or "Unknown"
-                except Exception:
-                    pass
-
-                return city_name or "Unknown", float(lat), float(lon)
-
-        except Exception:
-            # Ignore all JS/browser geolocation errors and fall back to IP
-            pass
-
-        # 2) Fallback: IP-based location (works without browser permission; may be host location after deploy)
-        try:
-            response = requests.get("https://ipinfo.io/json", timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                city = data.get("city", "Unknown")
-                loc = data.get("loc", "0,0").split(",")
-                lat, lon = float(loc[0]), float(loc[1])
-                return city, lat, lon
-        except Exception:
-            pass
-
+    try:
+        response = requests.get("https://ipinfo.io/json")
+        if response.status_code == 200:
+            data = response.json()
+            city = data.get("city", "Unknown")
+            loc = data.get("loc", "0,0").split(",")
+            lat, lon = float(loc[0]), float(loc[1])
+            return city, lat, lon
+    except:
         return None, None, None
+    return None, None, None
 
 def get_weather(lat, lon):
     url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={WEATHER_API_KEY}"
@@ -174,3 +114,4 @@ if st.button("Get Weather & Precautions"):
 
                 st.subheader("🌤️ Precautionary Advice:")
                 st.write(ai_response.text)
+
