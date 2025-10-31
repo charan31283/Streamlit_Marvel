@@ -1,29 +1,20 @@
 import requests
 import streamlit as st
+from streamlit_js_eval import get_geolocation
 import google.genai as genai
 
-WEATHER_API_KEY = "8f1b2bb4e9921443522d43cc36a8a719"  
-GEMINI_API_KEY = "AIzaSyD2k4du2yV_ce2X2_xf8ohXCHPp68S9UD0"  
+# --- API Keys ---
+WEATHER_API_KEY = "8f1b2bb4e9921443522d43cc36a8a719"
+GEMINI_API_KEY = "AIzaSyD2k4du2yV_ce2X2_xf8ohXCHPp68S9UD0"
 
+# --- Page Setup ---
 st.set_page_config(page_title="🌦️ Weather & Safety Assistant", page_icon="☁️")
 st.title("🌦️ Weather & Safety Assistant")
-
 st.write("This app shows your **current location's weather** automatically 🌍 and lets you check other cities too!")
 
-def get_current_location():
-    try:
-        response = requests.get("https://ipinfo.io/json")
-        if response.status_code == 200:
-            data = response.json()
-            city = data.get("city", "Unknown")
-            loc = data.get("loc", "0,0").split(",")
-            lat, lon = float(loc[0]), float(loc[1])
-            return city, lat, lon
-    except:
-        return None, None, None
-    return None, None, None
-
+# --- Helper Functions ---
 def get_weather(lat, lon):
+    """Fetch weather data from OpenWeather API using coordinates."""
     url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={WEATHER_API_KEY}"
     response = requests.get(url)
     if response.status_code == 200:
@@ -31,6 +22,7 @@ def get_weather(lat, lon):
     return None
 
 def get_coordinates(city_name):
+    """Get latitude and longitude for a given city."""
     url = f"http://api.openweathermap.org/geo/1.0/direct?q={city_name}&limit=1&appid={WEATHER_API_KEY}"
     response = requests.get(url)
     if response.status_code == 200:
@@ -39,51 +31,70 @@ def get_coordinates(city_name):
             return data[0]['lat'], data[0]['lon']
     return None, None
 
+def get_city_name(lat, lon):
+    """Reverse geocode coordinates to get city name."""
+    url = f"http://api.openweathermap.org/geo/1.0/reverse?lat={lat}&lon={lon}&limit=1&appid={WEATHER_API_KEY}"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.json()
+        if data:
+            return data[0].get('name', 'Unknown')
+    return "Unknown"
 
-current_city, lat, lon = get_current_location()
+def get_precautions(temp_c, city, desc, humidity):
+    """Generate AI-based precautions for the given weather."""
+    query = (
+        f"The current temperature is {temp_c}°C in {city} "
+        f"with {desc} and {humidity}% humidity. "
+        "Give some safety precautions for this weather."
+    )
+    client = genai.Client(api_key=GEMINI_API_KEY)
+    ai_response = client.models.generate_content(model="gemini-2.5-flash", contents=query)
+    return ai_response.text
 
-if current_city and lat and lon:
-    weather_data = get_weather(lat, lon)
-    if weather_data and "main" in weather_data:
-        tk = weather_data["main"]["temp"]
-        tc = round(tk - 273.15, 2)
-        desc = weather_data["weather"][0]["description"].capitalize()
-        humidity = weather_data["main"]["humidity"]
+# --- Get Location via Browser ---
+st.subheader("📍 Detecting your location...")
 
-        st.info(f"👋 Hi! You are currently in **{current_city}** 🌍")
-        st.write(f"**Temperature:** {tc}°C")
-        st.write(f"**Weather:** {desc}")
-        st.write(f"**Humidity:** {humidity}%")
+loc = get_geolocation()  # returns a dict like {'coords': {'latitude': ..., 'longitude': ...}}
 
-        if st.button("💡 Get Precautions for Current City"):
-            query = (
-                f"The current temperature is {tc}°C in {current_city} "
-                f"with {desc} and {humidity}% humidity. "
-                "Give some safety precautions for this weather."
-            )
-            client = genai.Client(api_key=GEMINI_API_KEY)
-            ai_response = client.models.generate_content(
-                model="gemini-2.5-flash", contents=query
-            )
+if loc and "coords" in loc:
+    lat = loc["coords"]["latitude"]
+    lon = loc["coords"]["longitude"]
+    city = get_city_name(lat, lon)
 
-            st.subheader("🌤️ Precautionary Advice:")
-            st.write(ai_response.text)
+    if city:
+        st.success(f"📍 Detected location: **{city}**")
+        data = get_weather(lat, lon)
+        if data and "main" in data:
+            temp_c = round(data["main"]["temp"] - 273.15, 2)
+            desc = data["weather"][0]["description"].capitalize()
+            humidity = data["main"]["humidity"]
+
+            st.write(f"🌡️ **Temperature:** {temp_c}°C")
+            st.write(f"☁️ **Weather:** {desc}")
+            st.write(f"💧 **Humidity:** {humidity}%")
+
+            if st.button("💡 Get Precautions for Current City"):
+                st.subheader("🌤️ Precautionary Advice:")
+                st.write(get_precautions(temp_c, city, desc, humidity))
+        else:
+            st.warning("⚠️ Could not fetch weather data for your location.")
     else:
-        st.warning("⚠️ Could not fetch weather for your current location.")
+        st.warning("⚠️ Could not detect your city name.")
 else:
-    st.warning("⚠️ Could not detect your location automatically.")
+    st.warning("⚠️ Could not access browser location (please allow location access in your browser).")
 
-
+# --- Check Another City ---
 st.markdown("---")
 st.subheader("🔍 Check Another City")
 
-city = st.text_input("🏙️ Enter another City Name to check:")
+city_input = st.text_input("🏙️ Enter another City Name:")
 
 if st.button("Get Weather & Precautions"):
-    if not city:
+    if not city_input:
         st.warning("⚠️ Please enter a valid city name.")
     else:
-        lat, lon = get_coordinates(city)
+        lat, lon = get_coordinates(city_input)
         if lat is None or lon is None:
             st.error("❌ Could not find the city. Please check the name.")
         else:
@@ -91,27 +102,14 @@ if st.button("Get Weather & Precautions"):
             if not data or "main" not in data:
                 st.error("⚠️ No weather data found.")
             else:
-                tk = data["main"]["temp"]
-                tc = round(tk - 273.15, 2)
-                description = data["weather"][0]["description"].capitalize()
+                temp_c = round(data["main"]["temp"] - 273.15, 2)
+                desc = data["weather"][0]["description"].capitalize()
                 humidity = data["main"]["humidity"]
-                city_name = data.get("name", city)
 
-                st.success(f"🌍 City: {city_name}")
-                st.write(f"🌡️ Temperature: {tc}°C")
-                st.write(f"☁️ Weather: {description}")
+                st.success(f"🌍 City: {city_input}")
+                st.write(f"🌡️ Temperature: {temp_c}°C")
+                st.write(f"☁️ Weather: {desc}")
                 st.write(f"💧 Humidity: {humidity}%")
 
-                query = (
-                    f"The current temperature is {tc}°C in {city_name} "
-                    f"with {description} and {humidity}% humidity. "
-                    "Give some safety precautions for this weather."
-                )
-                client = genai.Client(api_key=GEMINI_API_KEY)
-                ai_response = client.models.generate_content(
-                    model="gemini-2.5-flash", contents=query
-                )
-
                 st.subheader("🌤️ Precautionary Advice:")
-                st.write(ai_response.text)
-
+                st.write(get_precautions(temp_c, city_input, desc, humidity))
