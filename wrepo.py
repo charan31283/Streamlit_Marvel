@@ -2,7 +2,6 @@ import requests
 import streamlit as st
 from streamlit_js_eval import get_geolocation
 import google.genai as genai
-import pandas as pd
 
 # --- API Keys ---
 WEATHER_API_KEY = "8f1b2bb4e9921443522d43cc36a8a719"
@@ -53,6 +52,7 @@ def get_precautions(temp_c, city, desc, humidity):
     ai_response = client.models.generate_content(model="gemini-2.5-flash", contents=query)
     return ai_response.text
 
+
 # --- Get Location via Browser ---
 st.subheader("📍 Detecting your location...")
 
@@ -75,9 +75,8 @@ if loc and "coords" in loc:
             st.write(f"☁️ **Weather:** {desc}")
             st.write(f"💧 **Humidity:** {humidity}%")
 
-            # 🌍 Display current location on map
-            df = pd.DataFrame({'lat': [lat], 'lon': [lon]})
-            st.map(df, zoom=8, size=30)
+            # 🌍 Display current location on map (without pandas)
+            st.map([{"lat": lat, "lon": lon}], zoom=8)
 
             if st.button("💡 Get Precautions for Current City"):
                 st.subheader("🌤️ Precautionary Advice:")
@@ -116,9 +115,8 @@ if st.button("Get Weather & Precautions"):
                 st.write(f"☁️ Weather: {desc}")
                 st.write(f"💧 Humidity: {humidity}%")
 
-                # 🗺️ Show map for searched city
-                df_city = pd.DataFrame({'lat': [lat], 'lon': [lon]})
-                st.map(df_city, zoom=8, size=30)
+                # 🗺️ Show map for searched city (without pandas)
+                st.map([{"lat": lat, "lon": lon}], zoom=8)
 
                 st.subheader("🌤️ Precautionary Advice:")
                 st.write(get_precautions(temp_c, city_input, desc, humidity))
