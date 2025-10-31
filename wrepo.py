@@ -3,16 +3,13 @@ import streamlit as st
 from streamlit_js_eval import get_geolocation
 import google.genai as genai
 
-# --- API Keys ---
 WEATHER_API_KEY = "8f1b2bb4e9921443522d43cc36a8a719"
 GEMINI_API_KEY = "AIzaSyD2k4du2yV_ce2X2_xf8ohXCHPp68S9UD0"
 
-# --- Page Setup ---
 st.set_page_config(page_title="🌦️ Weather & Safety Assistant", page_icon="☁️")
 st.title("🌦️ Weather & Safety Assistant")
 st.write("This app shows your **current location's weather** automatically 🌍 and lets you check other cities too!")
 
-# --- Helper Functions ---
 def get_weather(lat, lon):
     """Fetch weather data from OpenWeather API using coordinates."""
     url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={WEATHER_API_KEY}"
@@ -52,10 +49,9 @@ def get_precautions(temp_c, city, desc, humidity):
     ai_response = client.models.generate_content(model="gemini-2.5-flash", contents=query)
     return ai_response.text
 
-# --- Get Location via Browser ---
 st.subheader("📍 Detecting your location...")
 
-loc = get_geolocation()  # returns a dict like {'coords': {'latitude': ..., 'longitude': ...}}
+loc = get_geolocation()  
 
 if loc and "coords" in loc:
     lat = loc["coords"]["latitude"]
@@ -84,7 +80,6 @@ if loc and "coords" in loc:
 else:
     st.warning("⚠️ Could not access browser location (please allow location access in your browser).")
 
-# --- Check Another City ---
 st.markdown("---")
 st.subheader("🔍 Check Another City")
 
@@ -113,3 +108,4 @@ if st.button("Get Weather & Precautions"):
 
                 st.subheader("🌤️ Precautionary Advice:")
                 st.write(get_precautions(temp_c, city_input, desc, humidity))
+
