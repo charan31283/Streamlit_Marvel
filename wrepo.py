@@ -51,7 +51,7 @@ if loc and "coords" in loc:
         st.write(f"🌡️ Temperature: **{temp}°C**")
         st.write(f"☁️ Weather: **{desc}**")
         st.write(f"💧 Humidity: **{humidity}%**")
-        st.map([{"lat": lat, "lon": lon}], zoom=8)
+        st.map([{"lat": lat, "lon": lon}], zoom=13)
 
         if st.button("💡 Show Precautions"):
             st.write(get_precautions(temp, city, desc, humidity))
@@ -78,7 +78,7 @@ if st.button("Get Weather"):
                 st.write(f"🌡️ Temperature: **{temp}°C**")
                 st.write(f"☁️ Weather: **{desc}**")
                 st.write(f"💧 Humidity: **{humidity}%**")
-                st.map([{"lat": lat, "lon": lon}], zoom=8)
+                st.map([{"lat": lat, "lon": lon}], zoom=13)
 
                 st.subheader("🌤️ Precautionary Advice:")
                 st.write(get_precautions(temp, city_input, desc, humidity))
@@ -86,4 +86,5 @@ if st.button("Get Weather"):
                 st.error("⚠️ Could not fetch weather data.")
         else:
             st.error("❌ City not found.")
+
 
