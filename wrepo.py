@@ -3,34 +3,28 @@ import streamlit as st
 from streamlit_js_eval import get_geolocation
 import google.genai as genai
 
-# 🔑 API Keys
 WEATHER_API_KEY = "8f1b2bb4e9921443522d43cc36a8a719"
 GEMINI_API_KEY = "AIzaSyD2k4du2YV_ce2X2_xf8ohXCHPp68S9UD0"
 
-# 🎨 Streamlit setup
 st.set_page_config(page_title="🌦️ Weather & Safety Assistant", page_icon="☁️")
 st.title("🌦️ Weather & Safety Assistant")
 
-# 🌍 Function to get weather by coordinates
 def get_weather(lat, lon):
     url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={WEATHER_API_KEY}"
     res = requests.get(url).json()
     return res if "main" in res else None
 
-# 🏙️ Get coordinates from city name
 def get_coordinates(city):
     url = f"http://api.openweathermap.org/geo/1.0/direct?q={city}&limit=1&appid={WEATHER_API_KEY}"
     res = requests.get(url).json()
     if res: return res[0]["lat"], res[0]["lon"]
     return None, None
 
-# 🏙️ Get city name from coordinates
 def get_city(lat, lon):
     url = f"http://api.openweathermap.org/geo/1.0/reverse?lat={lat}&lon={lon}&limit=1&appid={WEATHER_API_KEY}"
     res = requests.get(url).json()
     return res[0].get("name", "Unknown") if res else "Unknown"
 
-# 🤖 Get precautions using Gemini
 def get_precautions(temp, city, desc, humidity):
     query = (
         f"The current temperature is {temp}°C in {city} with {desc} "
@@ -40,7 +34,6 @@ def get_precautions(temp, city, desc, humidity):
     response = client.models.generate_content(model="gemini-2.5-flash", contents=query)
     return response.text
 
-# 📍 Auto detect location
 st.subheader("📍 Detecting your location...")
 loc = get_geolocation()
 
@@ -65,7 +58,6 @@ if loc and "coords" in loc:
 else:
     st.warning("⚠️ Please allow location access in your browser.")
 
-# 🔍 City search
 st.markdown("---")
 st.subheader("🔍 Check Another City")
 city_input = st.text_input("Enter city name:")
@@ -94,3 +86,4 @@ if st.button("Get Weather"):
                 st.error("⚠️ Could not fetch weather data.")
         else:
             st.error("❌ City not found.")
+
